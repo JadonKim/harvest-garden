@@ -2,22 +2,67 @@ namespace SpriteKind {
     export const Veggie = SpriteKind.create()
     export const Sprout = SpriteKind.create()
 }
-let targetSprout: Sprite = null
-function rabbitGoAfterSprout() {
-    if(targetSprout == null){
-     // get a list of sprouts and pick a random one
-     let sprouts = sprites .allOfKind(SpriteKind.Sprout)
-     let sproutIndex = randint(0, sprouts.length - 1)
-     targetSprout = sprouts[sproutIndex]
-    
-     targetSprout.say ("Save me!")
+function addScore(playerInfo: info.PlayerInfo, win: boolean){
+    playerInfo.changeScoreBy(1)
+if(playerInfo.score() == 10){
+    pause(100)
+    game.over(win)
+}
+}
+sprites.onOverlap(SpriteKind.Enemy, SpriteKind.Sprout, function (enemy,theSprout) {
 
-     rabbit.follow(targetSprout, 50)
-    }
+    addScore(info.player2, false)
+    turnSproutToVeggie(theSprout, enemy)
+    rabbitGoAfterSprout()
+})
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Sprout, function (thePlayer, theSprout) {
+
+    addScore(info.player1, true)
+    turnSproutToVeggie(theSprout, thePlayer)
+    rabbitGoAfterSprout()
+})
+
+function turnSproutToVeggie(theSprout: Sprite, whoToFollow: Sprite){
+    theSprout.setKind(SpriteKind.Veggie)
+
+    let veggieIndex = randint(0, veggies.length - 1)
+    let veggieImg = veggies [veggieIndex]
+    theSprout.setImage(veggieImg)
+    theSprout.say("")
+    theSprout.follow(whoToFollow)
 }
 
 
+
+
+
+
+
+
+
+
+
+function rabbitGoAfterSprout () {
+     sprouts = sprites.allOfKind(SpriteKind.Sprout)
+    if (targetSprout == null || targetSprout.kind() == SpriteKind.Veggie) {
+        if(sprouts.length > 0) {
+        // get a list of sprouts and pick a random one
+       
+        sproutIndex = randint(0, sprouts.length - 1)
+        targetSprout = sprouts[sproutIndex]
+        targetSprout.say("Save me!")
+        rabbit.follow(targetSprout, 50)
+       } 
+    }
+}
+let groundTile: tiles.Location = null
+let groundIndex = 0
+let sprout2: Sprite = null
 let sprout: Sprite = null
+let sproutIndex = 0
+let sprouts: Sprite[] = []
+let targetSprout: Sprite = null
+let rabbit: Sprite = null
 let veggies = [
 img`
     . . . . . . . . . . . . . . . . 
@@ -170,7 +215,7 @@ let player = sprites.create(img`
     . . f . f . . . f . f . . . . . 
     . . f . f . . . f . f . . . . . 
     `, SpriteKind.Player)
-let rabbit = sprites.create(img`
+rabbit = sprites.create(img`
     . . . . . . 1 . . 1 1 . . . . . 
     . . . . . 1 1 . . 1 . . . . . . 
     . . . . . 1 3 . 1 1 . . . . . . 
@@ -188,6 +233,8 @@ let rabbit = sprites.create(img`
     . . . . . . 1 . 1 . . . . . . . 
     . . . . . . 1 . 1 . . . . . . . 
     `, SpriteKind.Enemy)
+rabbit.z = 10
+player.z = 10
 scene.setBackgroundColor(13)
 tiles.setTilemap(tilemap`level`)
 controller.moveSprite(player)
@@ -195,13 +242,25 @@ scene.cameraFollowSprite(player)
 info.player1.setScore(0)
 info.player2.setScore(0)
 let availableFieldTiles = tiles.getTilesByType(myTiles.tile1)
-game.onUpdateInterval(500, function () {
-   if(availableFieldTiles.length > 0) {
-     sprout = sprites.create(sproutImg, SpriteKind.Sprout)
-     let groundIndex = randint(0, availableFieldTiles.length - 1)
-     let groundTile = availableFieldTiles[groundIndex]
-     tiles.placeOnTile(sprout, groundTile)
-     availableFieldTiles.removeAt(groundIndex)
-     
+                        
+game.onUpdateInterval(1000, function () {
+    if (availableFieldTiles.length > 0) {
+        sprout2 = sprites.create(sproutImg, SpriteKind.Sprout)
+        groundIndex = randint(0, availableFieldTiles.length - 1)
+        groundTile = availableFieldTiles[groundIndex]
+        tiles.placeOnTile(sprout2, groundTile)
+        availableFieldTiles.removeAt(groundIndex)
+        rabbitGoAfterSprout()
     } 
 })
+let msg = `It's harvest time!
+But there is a problem...
+There is a rabbit in the feild.
+She is eating all our veggies!
+Harvest your veggies before the rabbit does!
+Dont wworry, The rabbit will be fine.
+She can eat other things.
+Like grass or leaves or garbadge...
+Good luck!
+`
+game.showLongText(msg, DialogLayout.Full)
